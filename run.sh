@@ -1,3 +1,5 @@
+python consumer.py &
+sleep 2
 python match_shape.py &
 sleep 2
 python segment.py &
