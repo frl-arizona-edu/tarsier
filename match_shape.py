@@ -21,9 +21,13 @@ def run():
     zout.bind("tcp://127.0.0.1:5559")
 
     while(True):
-        img = zin.recv_pyobj()
+        (name, img, bbox) = zin.recv_pyobj()
+        print "match shape got %s" % name
         img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        check_for_match(img_grey)
+        match_stats = check_for_match(img_grey)
+        print "match shape processed %s" % name
+        zout.send_pyobj((name, img, bbox, match_stats))
+        print "match shape sent %s" % name
 
 
 def edge_and_fill(image):
@@ -46,6 +50,12 @@ def check_for_match(area_of_interest):
     min_ret = 1000000000000
     min_name = ''
 
+    print "cehck for match : num_contours : %d" % len(cntrs)
+
+    probs = {}
+    for target_name in target_contours.keys():
+        probs[target_name] = []
+
     for section in cntrs:
 
         area = cv2.contourArea(section)
@@ -60,15 +70,21 @@ def check_for_match(area_of_interest):
 
             ret = cv2.matchShapes(section, target, 1, 0.0)
 
-            if ret < min_ret:
-                min_ret = ret
-                min_name = target_name
-                cv2.drawContours(area_of_interest, [section], 0, (0, 0, 0), 4)
-                plt.imshow(area_of_interest)
-                plt.show()
+            probs[target_name].append(ret)
 
-    if min_ret < 0.1:
-        print "Closest match was %s with error = %f" % (min_name, min_ret)
+    print "area_probs" + str(probs)
+    area_match_prob = {}
+    for target_name in probs.keys():
+        if len(probs[target_name]) == 0:
+            avg = 0
+        else:
+            avg = 1-sum(probs[target_name])/float(len(probs[target_name]))
+
+        area_match_prob[target_name] = avg
+
+    print "area_prob" + str(area_match_prob)
+
+    return area_match_prob
 
 
 def load_known_contours():
