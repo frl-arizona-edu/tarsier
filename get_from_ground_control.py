@@ -17,7 +17,7 @@ def producer():
         target = cv2.imread(fname)
         #print "loaded %s" % fname
 
-        zmq_socket.send_pyobj(target)
-        print "sent %s" % fname
+        zmq_socket.send_pyobj((fname, target))
+        print "get_from_ground_control : sent %s" % fname
 
 producer()
