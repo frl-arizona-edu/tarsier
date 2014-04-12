@@ -19,13 +19,13 @@ def run():
     zout.bind("tcp://127.0.0.1:5558")
 
     while(True):
-        img = zin.recv_pyobj()
-        print "segment got an image"
+        (name, img) = zin.recv_pyobj()
+        print "segment got image : %s" % name
         img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         edges = edge_and_fill(img_grey)
 
-        for section in segment(edges, img):
-            zout.send_pyobj(section)
+        for (section, bbox) in segment(edges, img):
+            zout.send_pyobj((name, section, bbox))
 
 
 def edge_and_fill(image):
@@ -58,9 +58,9 @@ def segment(image, orig):
         x1 = min(img_w, x + w + w/5)
 
         cropped = orig[y0:y1, x0:x1]
-        yield cropped
+        yield (cropped, (x0, y0, x1-x0, y1-y0))
 
-        plt.imshow(cropped)
-        plt.show()
+        #plt.imshow(cropped)
+        #plt.show()
 
 run()
